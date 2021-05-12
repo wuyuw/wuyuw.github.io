@@ -7,9 +7,12 @@
 
 # production
 /dist
+public/
+.deploy*/
 
 # misc
 .DS_Store
 
 # idea
 .idea
+*.log
