@@ -476,7 +476,17 @@
 <img src="/images/gitlab_add_ssh.png" class="" title="gitlab_add_ssh">
 
 
+<h3 id="2-项目构建中需要使用docker进行镜像构建，报出docker命令不存在"><a href="#2-项目构建中需要使用docker进行镜像构建，报出docker命令不存在" class="headerlink" title="2.项目构建中需要使用docker进行镜像构建，报出docker命令不存在"></a>2.项目构建中需要使用docker进行镜像构建，报出docker命令不存在</h3><h4 id="问题分析：-1"><a href="#问题分析：-1" class="headerlink" title="问题分析："></a>问题分析：</h4><p>原因是gitlab-CI runner 每次执行任务所起的容器中没有安装docker。</p>
+<h4 id="解决方案：-1"><a href="#解决方案：-1" class="headerlink" title="解决方案："></a>解决方案：</h4><p>由于我们使用docker来启动Runner，并且Runner每次又会使用指定（或默认）的镜像来启动容器，在容器中<br>执行具体任务。因此我们需要实现在docker中调用docker的场景（Docker in Docker）。</p>
+<p>实际上我们并不需要在Docker容器中安装Docker，在启动runner的时候，我们将宿主机的/var/run/docker.sock挂载到容器中，使runner容器中docker-cli可以调用宿主机的docker daemon。同时我们想在构建过程中使用docker来打包，只需要在job中指定任务执行依赖的镜像为gitlab/dind，这个是由gitlab提供的docker in docker 镜像。</p>
+<p>参考：<a href="https://wangbaiyuan.cn/docker-in-docker.html">https://wangbaiyuan.cn/docker-in-docker.html</a></p>
+<h3 id="3-项目构建中需要进行前端构建，报出yarn或npm不存在"><a href="#3-项目构建中需要进行前端构建，报出yarn或npm不存在" class="headerlink" title="3.项目构建中需要进行前端构建，报出yarn或npm不存在"></a>3.项目构建中需要进行前端构建，报出yarn或npm不存在</h3><h4 id="问题分析：-2"><a href="#问题分析：-2" class="headerlink" title="问题分析："></a>问题分析：</h4><p>原因是gitlab-CI runner 每次执行任务所起的容器中没有安装node、yarn。</p>
+<h4 id="解决方案：-2"><a href="#解决方案：-2" class="headerlink" title="解决方案："></a>解决方案：</h4><p>在gitlab/dind镜像的基础上，手动安装node、yarn，制作新的镜像。</p>
+<figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line"># 安装node</span><br><span class="line">wget https://nodejs.org/dist/v12.18.3/node-v12.18.3-linux-x64.tar.gz &amp;&amp; tar -zxvf node-v12.18.3-linux-x64.tar.gz &amp;&amp; ln -s /root/node-v12.18.3-linux-x64/bin/node /usr/local/bin/node &amp;&amp; ln -s /root/node-v12.18.3-linux-x64/bin/npm /usr/local/bin/npm</span><br><span class="line"></span><br><span class="line"># 安装yarn</span><br><span class="line">wget https://yarnpkg.com/latest.tar.gz -O /tmp/yarn.tar.gz &amp;&amp; mkdir /opt/yarn &amp;&amp; tar zvxf /tmp/yarn.tar.gz --strip-components=1 -C /opt/yarn &amp;&amp; ln -s /opt/yarn/bin/yarn /usr/local/bin/yarn</span><br><span class="line"></span><br><span class="line"># 修改镜像源</span><br><span class="line">yarn config set registry https://registry.npm.taobao.org/</span><br><span class="line">npm config set registry https://registry.npm.taobao.org/</span><br></pre></td></tr></table></figure>
 
+<h3 id="4-前端构建中报错gyp-ERR-stack-Error-not-found-make"><a href="#4-前端构建中报错gyp-ERR-stack-Error-not-found-make" class="headerlink" title="4.前端构建中报错gyp ERR! stack Error: not found: make"></a>4.前端构建中报错<code>gyp ERR! stack Error: not found: make</code></h3><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">gyp ERR! build error </span><br><span class="line">gyp ERR! stack Error: not found: make</span><br></pre></td></tr></table></figure>
+
+<h4 id="解决方案：-3"><a href="#解决方案：-3" class="headerlink" title="解决方案："></a>解决方案：</h4><figure class="highlight plaintext"><table><tr><td class="code"><pre><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install build-essential</span><br></pre></td></tr></table></figure>
 
 ]]></content>
       <categories>
